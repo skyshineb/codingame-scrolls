@@ -39,6 +39,6 @@ class ChuckNorrisPuzzle: PuzzleBase() {
         return this
     }
 
-    fun charToBinString(char: Char): String = String.format("%9s", Integer.toBinaryString(char.toInt() and 0xFF)).replace("^[ ]+".toRegex(), "0")
+    fun charToBinString(char: Char): String = String.format("%7s", Integer.toBinaryString(char.toInt() and 0xFF)).replace("^[ ]+".toRegex(), "0")
 
 }
