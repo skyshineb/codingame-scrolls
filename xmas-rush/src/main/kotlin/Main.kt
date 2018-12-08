@@ -3,6 +3,27 @@ import java.io.*
 import java.math.*
 import kotlin.collections.ArrayList
 
+class Tile
+
+class Graph {
+    val adjacencyMap: HashMap<Tile, HashSet<Tile>> = HashMap()
+
+    fun addEdge(sourceVertex: Tile, destinationVertex: Tile) {
+        adjacencyMap
+                .computeIfAbsent(sourceVertex){HashSet()}
+                .add(destinationVertex)
+        adjacencyMap
+                .computeIfAbsent(destinationVertex){HashSet()}
+                .add(sourceVertex)
+    }
+
+    override fun toString(): String = StringBuffer().apply {
+        for (key in adjacencyMap.keys) {
+            append("$key -> ")
+            append(adjacencyMap[key]?.joinToString(", ", "[", "]\n"))
+        }
+    }.toString()
+}
 
 class ElvesDoStuff{
 
