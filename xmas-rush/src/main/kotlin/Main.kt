@@ -3,7 +3,7 @@ import java.io.*
 import java.math.*
 import kotlin.collections.ArrayList
 
-class Tile
+val mapSize = 4
 
 class Graph {
     val adjacencyMap: HashMap<Tile, HashSet<Tile>> = HashMap()
@@ -25,6 +25,62 @@ class Graph {
     }.toString()
 }
 
+fun fillGraph(mapArray: ArrayList<ArrayList<Tile>>): Graph {
+    val graph = Graph()
+    for (x in 0 until mapSize){
+        for (y in 0 until mapSize){
+            val tile = mapArray[x][y]
+            if (tile.up && tile.y != 0){
+                val upperTile = mapArray[tile.x][tile.y - 1]
+                if (upperTile.down) graph.addEdge(tile, upperTile)
+            }
+            if (tile.right && tile.x != (mapSize - 1)){
+                val rigthTile = mapArray[tile.x + 1][tile.y]
+                if (rigthTile.left) graph.addEdge(tile, rigthTile)
+            }
+            if (tile.down && tile.y != (mapSize - 1)){
+                val lowerTile = mapArray[tile.x][tile.y + 1]
+                if (lowerTile.up) graph.addEdge(tile, lowerTile)
+            }
+            if (tile.left && tile.x != 0){
+                val leftTile = mapArray[tile.x - 1][tile.y]
+                if (leftTile.up) graph.addEdge(tile, leftTile)
+            }
+        }
+    }
+    return graph
+}
+
+data class Tile(
+        val up: Boolean,
+        val right: Boolean,
+        val down: Boolean,
+        val left: Boolean,
+        val x: Int,
+        val y: Int) {
+    companion object {
+        fun parseTitle(s: String, x: Int, y:Int): Tile {
+            return Tile(s[0] == '1', s[1] == '1', s[2] == '1', s[3] == '1', x, y)
+        }
+    }
+
+    override fun toString(): String {
+        return "[$x,$y]"
+    }
+}
+
+data class Item(
+        val itemName: String,
+        val itemX: Int,
+        val itemY: Int,
+        val itemPlayerId: Int) {
+    companion object {
+        fun parseItem(itemName: String, x: Int, y:Int, itemPlayerId: Int): Item {
+            return Item(itemName, x, y, itemPlayerId)
+        }
+    }
+}
+
 class ElvesDoStuff{
 
     /**
@@ -33,16 +89,20 @@ class ElvesDoStuff{
     fun main(programInput : String) {
         val input = Scanner(programInput)
 
-        val mapSize = 4
+        val tiles = ArrayList<ArrayList<Tile>>()
+        val items = ArrayList<Item>()
         // game loop
         while (true) {
             // 0 - PUSH 1 - MOVE
             val tileArray = ArrayList<ArrayList<String>>(7)
             val turnType = input.nextInt()
             for (i in 0 until mapSize) {
+                val tmpTile = ArrayList<Tile>()
                 for (j in 0 until mapSize) {
                     val tile = input.next()
+                    tmpTile.add(Tile.parseTitle(tile, i, j))
                 }
+                tiles.add(tmpTile)
             }
             for (i in 0 until 2) {
                 val numPlayerCards = input.nextInt() // the total number of quests for a player (hidden and revealed)
@@ -56,6 +116,7 @@ class ElvesDoStuff{
                 val itemX = input.nextInt()
                 val itemY = input.nextInt()
                 val itemPlayerId = input.nextInt()
+                items.add(Item(itemName, itemX, itemX, itemPlayerId))
             }
             val numQuests = input.nextInt() // the total number of revealed quests for both players
             for (i in 0 until numQuests) {
@@ -67,6 +128,7 @@ class ElvesDoStuff{
             // To debug: System.err.println("Debug messages...");
 
             println("PUSH 3 RIGHT") // PUSH <id> <direction> | MOVE <direction> | PASS
+            println(fillGraph(tiles).toString())
         }
     }
 
