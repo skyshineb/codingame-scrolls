@@ -25,26 +25,26 @@ class Graph {
     }.toString()
 }
 
-fun fillGraph(mapArray: ArrayList<ArrayList<Tile>>): Graph {
+fun fillGraph(map: Map): Graph {
     val graph = Graph()
     for (x in 0 until mapSize){
         for (y in 0 until mapSize){
-            val tile = mapArray[x][y]
+            val tile = map.getTile(x, y)
             if (tile.up && tile.y != 0){
-                val upperTile = mapArray[tile.x][tile.y - 1]
+                val upperTile =  map.getTile(tile.x, tile.y - 1)
                 if (upperTile.down) graph.addEdge(tile, upperTile)
             }
             if (tile.right && tile.x != (mapSize - 1)){
-                val rigthTile = mapArray[tile.x + 1][tile.y]
+                val rigthTile = map.getTile(tile.x + 1, tile.y)
                 if (rigthTile.left) graph.addEdge(tile, rigthTile)
             }
             if (tile.down && tile.y != (mapSize - 1)){
-                val lowerTile = mapArray[tile.x][tile.y + 1]
+                val lowerTile = map.getTile(tile.x, tile.y + 1)
                 if (lowerTile.up) graph.addEdge(tile, lowerTile)
             }
             if (tile.left && tile.x != 0){
-                val leftTile = mapArray[tile.x - 1][tile.y]
-                if (leftTile.up) graph.addEdge(tile, leftTile)
+                val leftTile = map.getTile(tile.x - 1, tile.y)
+                if (leftTile.right) graph.addEdge(tile, leftTile)
             }
         }
     }
@@ -81,6 +81,10 @@ data class Item(
     }
 }
 
+class Map(val tileArray: ArrayList<ArrayList<Tile>>){
+    fun getTile(x: Int, y: Int) = tileArray[y][x]
+}
+
 class ElvesDoStuff{
 
     /**
@@ -94,13 +98,12 @@ class ElvesDoStuff{
         // game loop
         while (true) {
             // 0 - PUSH 1 - MOVE
-            val tileArray = ArrayList<ArrayList<String>>(7)
             val turnType = input.nextInt()
             for (i in 0 until mapSize) {
                 val tmpTile = ArrayList<Tile>()
                 for (j in 0 until mapSize) {
                     val tile = input.next()
-                    tmpTile.add(Tile.parseTitle(tile, i, j))
+                    tmpTile.add(Tile.parseTitle(tile, j, i))
                 }
                 tiles.add(tmpTile)
             }
@@ -128,7 +131,8 @@ class ElvesDoStuff{
             // To debug: System.err.println("Debug messages...");
 
             println("PUSH 3 RIGHT") // PUSH <id> <direction> | MOVE <direction> | PASS
-            println(fillGraph(tiles).toString())
+            val map = Map(tiles)
+            println(fillGraph(map).toString())
         }
     }
 
