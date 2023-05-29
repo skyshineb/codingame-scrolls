@@ -9,10 +9,15 @@ import java.util.stream.Stream;
 
 class Cell {
     public Hex coord;
-    public int type;    // 0 for empty, 1 for eggs, 2 for crystal
+
+    /**
+     * 0 for empty, 1 for eggs, 2 for crystal
+     */
+    public int type;
     public int resources;
     public int myAnts;
     public int oppAnts;
+    public int[] neighbourIds;
 
     public String toString() {
         return String.format("%s t: %d res: %d", coord, type, resources);
@@ -75,19 +80,24 @@ class Player {
                 .limit(numberOfCells).collect(Collectors.toCollection(ArrayList::new));
 
         // set initial hex coords to 0, 0, 0
-        grid.get(0).coord = new Hex(0, 0, 0);
+//        grid.get(0).coord = new Hex(0, 0, 0);
         for (int i = 0; i < numberOfCells; i++) {
             int type = in.nextInt(); // 0 for empty, 1 for eggs, 2 for crystal
             int initialResources = in.nextInt(); // the initial amount of eggs/crystals on this cell
             grid.get(i).type = type;
             grid.get(i).resources = initialResources;
 
-            for (int neighIndex = 0; neighIndex < 6; neighIndex++) {
-                int neigh = in.nextInt(); // the index of the neighbouring cell for each direction
-                if (neigh != -1) {
-                    // set coords to adjacent cells
-                    grid.get(neigh).coord = grid.get(i).coord.neighbor(neighIndex);
-                }
+            grid.get(i).neighbourIds = new int[6];
+            for (int nI = 0; nI < 6; nI++) {
+                int neighbour = in.nextInt(); // the index of the neighbouring cell for each direction
+                grid.get(i).neighbourIds[nI] = neighbour;
+//                if (neighbour != -1) {
+//                    // set coords to adjacent cells
+//                    Hex currCoords = grid.get(i).coord;
+//                    if (currCoords != null){
+//                        grid.get(neighbour).coord = grid.get(i).coord.neighbor(nI);
+//                    }
+//                }
             }
         }
         int numberOfBases = in.nextInt();
@@ -101,6 +111,11 @@ class Player {
             System.err.println("oppBase " + oppBase);
         }
 
+        fillCoordinates(grid.get(0), new Hex(0, 0, 0), grid);
+//        for (Cell c : grid) {
+//            System.err.println(c);
+//        }
+
         // game loop
         while (true) {
             System.err.println("numberOfCells " + numberOfCells);
@@ -112,32 +127,72 @@ class Player {
                 grid.get(i).myAnts = myAnts;
                 grid.get(i).oppAnts = oppAnts;
             }
-            Stack<Cell> candidates = new Stack<>();
+            PriorityQueue<Cell> candidates = new PriorityQueue<>(cellComparator);
             for (Cell c : grid) {
                 if (c.resources > 0) {
-                    int dToMyBase = c.coord.distance(grid.get(myBase).coord);
-                    int dToOppBase = c.coord.distance(grid.get(oppBase).coord);
-                    if (dToMyBase < dToOppBase) {
-                        if (!candidates.empty()) {
-                            if (dToMyBase > candidates.peek().coord.distance(grid.get(myBase).coord)) {
-                                candidates.push(c);
+                    if (c.type == 2) {
+                        int dToMyBase = c.coord.distance(grid.get(myBase).coord);
+                        int dToOppBase = c.coord.distance(grid.get(oppBase).coord);
+                        if (dToMyBase < dToOppBase) {
+                            if (!candidates.isEmpty()) {
+                                if (dToMyBase > candidates.peek().coord.distance(grid.get(myBase).coord)) {
+                                    candidates.add(c);
+                                }
+                            } else {
+                                candidates.add(c);
                             }
                         } else {
-                            candidates.push(c);
+                            candidates.add(c);
                         }
-                    } else {
-                        candidates.add(candidates.size(), c);
+                    } else if (c.type == 1) {
+                        int dToMyBase = c.coord.distance(grid.get(myBase).coord);
+                        int dToOppBase = c.coord.distance(grid.get(oppBase).coord);
+                        if (dToMyBase < dToOppBase) {
+                            candidates.add(c);
+                        }
                     }
                 }
             }
             if (!candidates.isEmpty()) {
-                System.out.println("LINE " + myBase + " " + grid.indexOf(candidates.pop()) + " " + 10);
+                System.out.println("LINE " + myBase + " " + grid.indexOf(candidates.poll()) + " " + 10);
             } else {
                 System.out.println("WAIT");
             }
 
             // WAIT | LINE <sourceIdx> <targetIdx> <strength> | BEACON <cellIdx> <strength> | MESSAGE <text>
 
+        }
+    }
+
+    public static Comparator<Cell> cellComparator = new Comparator<Cell>(){
+
+        @Override
+        public int compare(Cell c1, Cell c2) {
+            //добавить дистанцию до базы рассчитывая ее для каждой клетки заранее
+            // both eggs
+            if (c1.type == 1 && c2.type == 1) {
+                // pick the most resources
+                return c1.resources - c2.resources;
+            }
+            if (c1.type == 1) {
+                return -1;
+            }
+            if (c2.type == -1) {
+                return  1;
+            }
+            return (int) (c1.resources) - c2.resources;
+        }
+    };
+
+    private static final Stack<Cell> fillStack = new Stack<>();
+    private static void fillCoordinates(Cell current, Hex coordinates, ArrayList<Cell> grid) {
+        fillStack.push(current);
+        current.coord = coordinates;
+        for (int i = 0; i < current.neighbourIds.length; i++) {
+            if (current.neighbourIds[i] != -1 && fillStack.search(grid.get(current.neighbourIds[i])) == -1) {
+                Hex neighbourCoords = coordinates.neighbor(i);
+                fillCoordinates(grid.get(current.neighbourIds[i]), neighbourCoords, grid);
+            }
         }
     }
 }
